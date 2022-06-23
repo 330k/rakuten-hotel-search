@@ -23,29 +23,43 @@ const searchresult = {
 };
 
 // ホテル情報ロード
-new Promise(async function(resolve, reject){
+(async function(){
   try{
     console.log("Loading hotel database");
+    
+    /*
+    // plain json
     const response = await fetch("./hotel_info_all.json");
     //const response = await fetch("https://script.google.com/macros/s/AKfycbwRwOIja_IyulhaCHB5S_AeGzeUSoLUkUtHBLho8LhsCN1tq7mrMqPjp17V8OkzZlAj/exec?method=JSON");
     window.hotel_info = await response.json();
-    console.log("hotel database loaded");
-    /*const response = await fetch("hotel_info.json.gz");
-    console.log("hotel database loaded");
+    console.log("hotel database loaded");*/
+    
+    /*
+    // json.gz
+    const response = await fetch("hotel_info_all.json.gz");
     const buffer = await response.arrayBuffer();
     const gunzip = new Zlib.Gunzip(new Uint8Array(buffer));
     const plain = gunzip.decompress();
     const text = new TextDecoder().decode(plain);
-    global.hotel_info = JSON.parse(text);*/
-    resolve();
+    window.hotel_info = JSON.parse(text);
+    console.log("hotel database loaded");*/
+    
+    // json.gz.b64
+    const response = await fetch("hotel_info_all.json.gz.b64");
+    const base64text = await response.text();
+    const buffer = await fetch("data:application/gzip;base64," + base64text).then(response => response.arrayBuffer());
+    const gunzip = new Zlib.Gunzip(new Uint8Array(buffer));
+    const plain = gunzip.decompress();
+    const text = new TextDecoder().decode(plain);
+    window.hotel_info = JSON.parse(text);
+    console.log("hotel database loaded");
     
   }catch(e){
     console.error(e);
     window.hotel_info = [];
-    reject();
     
   }
-});
+})();
 
 /**
  * Google Maps JavaScript API Initialize Callback
@@ -519,7 +533,7 @@ function showHotelList(){
       content: "<a href='" + hotel.hotelBasicInfo.hotelInformationUrl + "' target='_blank'>" + toHalfWidth(hotel.hotelBasicInfo.hotelName) + "</a>"
         + "<br><br>チェックイン時間: " + hotel.hotelDetailInfo.checkinTime + "-" + (hotel.hotelDetailInfo.lastCheckinTime ? hotel.hotelDetailInfo.lastCheckinTime : "")
         + "<br>洗濯機: " + (hasCoinLaundry(hotel) ? "あり" : "なし")
-        + "<br>最安値: " + (hotel.hotelMinCharge ? (hotel.hotelMinCharge + "円") : "情報なし")
+        + "<br>最安値: " + (hotel.hotelBasicInfo.hotelMinCharge ? (hotel.hotelBasicInfo.hotelMinCharge + "円") : "情報なし")
         + "<br><br>"
         + (hotel.hotelBasicInfo.hotelThumbnailUrl ? "<img src='" + hotel.hotelBasicInfo.hotelThumbnailUrl + "'/>" : "")
         + (hotel.hotelBasicInfo.roomThumbnailUrl ? "<img src='" + hotel.hotelBasicInfo.roomThumbnailUrl + "'/>" : "")
@@ -688,20 +702,35 @@ if (!doNotTrack) {
   left: 0;
   width: 25%;
   height: 100%;
-  overflow-x: hidden;
-  overflow-y: scroll;
   background-color: #fff;
 }
+#left_panel #search_conditions {
+  width: 100%;
+  height: 100px;
+  background: white;
+}
+
 #left_panel fieldset {
   margin: 5px;
   padding: 5px;
 }
+
+#left_panel #result_table{
+  width: 100%;
+  height: calc(100% - 100px);
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
 #left_panel table {
   border-collapse: collapse;
   width: 100%;
 }
 #left_panel table thead {
   background-color: #eee;
+  position: sticky;
+  top: 0;
+  left: 0;
 }
 #left_panel table tbody {
   
@@ -775,39 +804,41 @@ if (!doNotTrack) {
 <body>
 <div id="wrapper">
 <div id="left_panel">
-<fieldset id="search_conditions">
+<div id="search_conditions">
+<fieldset>
   <legend>検索条件</legend>
   <div>最終チェックイン時刻: <select id="last_checkin_min">
-    <option value="00:00" selected>すべて</option>
-    <option value="15:00">15:00</option>
-    <option value="16:00">16:00</option>
-    <option value="17:00">17:00</option>
-    <option value="18:00">18:00</option>
-    <option value="19:00">19:00</option>
-    <option value="20:00">20:00</option>
-    <option value="21:00">21:00</option>
-    <option value="22:00">22:00</option>
-    <option value="23:00">23:00</option>
-    <option value="24:00">24:00</option>
+   <option value="00:00" selected>すべて</option>
+   <option value="15:00">15:00</option>
+   <option value="16:00">16:00</option>
+   <option value="17:00">17:00</option>
+   <option value="18:00">18:00</option>
+   <option value="19:00">19:00</option>
+   <option value="20:00">20:00</option>
+   <option value="21:00">21:00</option>
+   <option value="22:00">22:00</option>
+   <option value="23:00">23:00</option>
+   <option value="24:00">24:00</option>
   </select>〜<select id="last_checkin_max">
-  <option value="18:00">18:00</option>
-  <option value="19:00">19:00</option>
-  <option value="20:00">20:00</option>
-  <option value="21:00">21:00</option>
-  <option value="22:00">22:00</option>
-  <option value="23:00">23:00</option>
-  <option value="24:00">24:00</option>
-  <option value="25:00">25:00</option>
-  <option value="26:00">26:00</option>
-  <option value="27:00">27:00</option>
-  <option value="99:99" selected>すべて</option>
-</select>
-  </div>
+   <option value="18:00">18:00</option>
+   <option value="19:00">19:00</option>
+   <option value="20:00">20:00</option>
+   <option value="21:00">21:00</option>
+   <option value="22:00">22:00</option>
+   <option value="23:00">23:00</option>
+   <option value="24:00">24:00</option>
+   <option value="25:00">25:00</option>
+   <option value="26:00">26:00</option>
+   <option value="27:00">27:00</option>
+   <option value="99:99" selected>すべて</option>
+  </select></div>
   <div><label><input type="checkbox" id="show_hotels_without_last_checkin" checked>最終チェックイン時刻の情報がない宿も表示<label></div>
   <div><label><input type="checkbox" id="laundry_exists">洗濯機が有る宿のみ表示<label></div>
   <div><label title="価格情報がない宿は営業していない可能性があります"><input type="checkbox" id="price_info_exists">最低価格情報が有る宿のみ表示<label></div>
   <!--<div><label><input type="checkbox" id="preserve_results">クリック時に以前検索した結果に追記する<label></div>-->
 </fieldset>
+</div>
+<div id="result_table">
 <table id="table_hotels">
 <thead>
 <tr><th style="width: 2em;">No</th><th>ホテル名</th><th style="width: 11em;">チェックイン</th><th style="width: 4em;">洗濯機</th></tr>
@@ -815,6 +846,7 @@ if (!doNotTrack) {
 <tbody id="tbody_hotel">
 </tbody>
 </table>
+</div>
 <div id="message"></div>
 </div>
 <div id="map_canvas"></div>
