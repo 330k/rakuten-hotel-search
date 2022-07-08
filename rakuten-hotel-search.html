@@ -27,31 +27,10 @@ const searchresult = {
   try{
     console.log("Loading hotel database");
     
-    /*
     // plain json
-    const response = await fetch("./hotel_info_all.json");
-    //const response = await fetch("https://script.google.com/macros/s/AKfycbwRwOIja_IyulhaCHB5S_AeGzeUSoLUkUtHBLho8LhsCN1tq7mrMqPjp17V8OkzZlAj/exec?method=JSON");
+    const response = await fetch("https://script.google.com/macros/s/AKfycbwRwOIja_IyulhaCHB5S_AeGzeUSoLUkUtHBLho8LhsCN1tq7mrMqPjp17V8OkzZlAj/exec?method=JSON_SUMMARY");
+    //const response = await fetch("hotel_info_summary.json");
     window.hotel_info = await response.json();
-    console.log("hotel database loaded");*/
-    
-    /*
-    // json.gz
-    const response = await fetch("hotel_info_all.json.gz");
-    const buffer = await response.arrayBuffer();
-    const gunzip = new Zlib.Gunzip(new Uint8Array(buffer));
-    const plain = gunzip.decompress();
-    const text = new TextDecoder().decode(plain);
-    window.hotel_info = JSON.parse(text);
-    console.log("hotel database loaded");*/
-    
-    // json.gz.b64
-    const response = await fetch("hotel_info_all.json.gz.b64");
-    const base64text = await response.text();
-    const buffer = await fetch("data:application/gzip;base64," + base64text).then(response => response.arrayBuffer());
-    const gunzip = new Zlib.Gunzip(new Uint8Array(buffer));
-    const plain = gunzip.decompress();
-    const text = new TextDecoder().decode(plain);
-    window.hotel_info = JSON.parse(text);
     console.log("hotel database loaded");
     
   }catch(e){
@@ -374,97 +353,44 @@ window.addEventListener("DOMContentLoaded", function(){
  * */
 async function searchHotels(){
   clearResult();
-  //searchresult.api_result = await getHotelList(evt.latLng.lat(), evt.latLng.lng());
   const lat_min = googlemap.map.getBounds().getSouthWest().lat();
   const lng_min = googlemap.map.getBounds().getSouthWest().lng();
   const lat_max = googlemap.map.getBounds().getNorthEast().lat();
   const lng_max = googlemap.map.getBounds().getNorthEast().lng();
 
   searchresult.api_result = hotel_info.filter((e) => (
-    (lat_min < e.hotelBasicInfo.latitude) && (e.hotelBasicInfo.latitude < lat_max) && (lng_min < e.hotelBasicInfo.longitude) && (e.hotelBasicInfo.longitude < lng_max)
+    (lat_min < e.latitude) && (e.latitude < lat_max) && (lng_min < e.longitude) && (e.longitude < lng_max)
   ));
-  showHotelList();
-}
-
-/**
- * 楽天トラベルAPIでホテルを検索
- * @param {number} latitude 緯度
- * @param {number} longitude 経度
- * @return {{status:string,hotels:Array}}
- */
-async function getHotelList(latitude, longitude){
-  const lat = latitude.toFixed(6);
-  const lon = longitude.toFixed(6);
+  
   const appid = "1008123474471814322";
   const affid = "219cb501.2d23fbc2.219cb502.49f3944c";
-
-  const result = {
-    status: "",
-    hotels: []
-  };
-  
-  const drawcircle = function(lat, lon, radius){
-    if(googlemap.searchareacircle){
-      googlemap.searchareacircle.setMap(null);
-    }
-    googlemap.searchareacircle = new google.maps.Circle({
-      map: googlemap.map,
-      center: new google.maps.LatLng(lat, lon),
-      radius: radius * 1000,
-      strokeColor: '#ff0000',
-      strokeOpacity: 0.7,
-      strokeWeight: 2,
-      fillColor: '#ff0000',
-      fillOpacity: 0.1,
-      clickable: false
-    });
-  };
-
-  try{
-
-    // 件数が多すぎて楽天トラベルAPIが落ちるときは検索半径をだんだんと小さくしていく
-    let response;
-    let json;
-    let r;
-    for(const r of [3,1,0.5]){
-      url = `https://app.rakuten.co.jp/services/api/Travel/SimpleHotelSearch/20170426?applicationId=${appid}&affiliateId=${affid}&format=json&datumType=1&latitude=${lat}&longitude=${lon}&searchRadius=${r}&responseType=large&allReturnFlag=1`;
-      drawcircle(latitude, longitude, r);
-
-      response = await fetch(url);
-      json = await response.json();
-
-      if(json.hotels || (json.error === "not_found")){
-        break;
-      }
-    }
+  for(let i = 0; i < searchresult.api_result.length; i += 15){
+    const hotelNos = searchresult.api_result.slice(i, i + 15).map((e) => e.hotelNo);
+    console.log(hotelNos);
+    const response = await fetch(`https://app.rakuten.co.jp/services/api/Travel/SimpleHotelSearch/20170426?applicationId=${appid}&affiliateId=${affid}&format=json&formatVersion=2&datumType=1&responseType=large&hotelNo=` + hotelNos.join(","));
+    const json = await response.json();
     
-    result.status = "SUCCESS";
-
-    if(json.hotels && json.hotels.length > 0){
-      json.hotels.map((hotel) => {
-        const hotelinfo = {};
-        
-        hotel.hotel.map((obj) => {
-          Object.keys(obj).map((key) => {
-            hotelinfo[key] = obj[key];
-          });
+    const hotels = [];
+    json.hotels.map((hotel) => {
+      const hotelinfo = {};
+      
+      hotel.map((obj) => {
+        Object.keys(obj).map((key) => {
+          hotelinfo[key] = obj[key];
         });
-        
-        result.hotels.push(hotelinfo);
       });
       
+      hotels.push(hotelinfo);
+    });
+    console.log(hotels);
+    for(let j = 0; j < hotels.length; j++){
+      searchresult.api_result[i + j] = {
+        ...(searchresult.api_result[i + j]),
+        ...(hotels[j])
+      };
     }
-    if(json.error){
-      console.log(json.error);
-      result.status = json.error;
-    }
-
-  }catch(e){
-    console.log(e);
-    result.status = "ERROR";
   }
-
-  return result;
+  showHotelList();
 }
 
 /**
@@ -475,12 +401,12 @@ function showHotelList(){
   const ele_tbody = document.getElementById("tbody_hotel");
   ele_tbody.innerHTML = "";
 
-  const hasCoinLaundry = (hotel) => hotel.hotelFacilitiesInfo.hotelFacilities.some((e) => /コインランドリー/.test(e.item));
+  const hasCoinLaundry = (hotel) => hotel.laundry;
   
   // 最終チェックイン時刻が遅い、洗濯機がある順にソート
   let hotels_displayed = searchresult.api_result.sort((a,b) => {
-    const c1 = a.hotelDetailInfo.lastCheckinTime ? a.hotelDetailInfo.lastCheckinTime : "";
-    const c2 = b.hotelDetailInfo.lastCheckinTime ? b.hotelDetailInfo.lastCheckinTime : "";
+    const c1 = a.lastCheckinTime ? a.lastCheckinTime : "";
+    const c2 = b.lastCheckinTime ? b.lastCheckinTime : "";
     
     if(c1 > c2){
       return -1;
@@ -496,7 +422,7 @@ function showHotelList(){
 
   // 表示を絞り込み(最終チェックイン時刻)
   hotels_displayed = hotels_displayed.filter((hotel) => {
-    const checkintime = hotel.hotelDetailInfo.lastCheckinTime ? hotel.hotelDetailInfo.lastCheckinTime : null;
+    const checkintime = hotel.lastCheckinTime ? hotel.lastCheckinTime : null;
 
     if(checkintime){
       return (checkintime >= document.getElementById("last_checkin_min").value) && (checkintime <= document.getElementById("last_checkin_max").value);
@@ -513,32 +439,32 @@ function showHotelList(){
   // 絞り込み(価格情報)
   if(document.getElementById("price_info_exists").checked){
     hotels_displayed = hotels_displayed.filter((hotel) => {
-      return !!hotel.hotelBasicInfo.hotelMinCharge;
+      return !!hotel.hotelMinCharge;
     });
   }
 
   for(i = 0; i < hotels_displayed.length; i++){
     const hotel = hotels_displayed[i];
-    const hotel_no = hotel.hotelBasicInfo.hotelNo;
+    const hotel_no = hotel.hotelNo;
     const hotel_row_id = "hotel_" + hotel_no;
     const ele_tr = document.createElement("tr");
     
     ele_tr.id = hotel_row_id;
     ele_tr.innerHTML = "<td>" + (i + 1) + "</td>"
-      + "<td><a href='" + hotel.hotelBasicInfo.hotelInformationUrl + "' target='_blank'>" + toHalfWidth(hotel.hotelBasicInfo.hotelName) + "</a></td>"
-      + "<td>" + hotel.hotelDetailInfo.checkinTime + "-" + (hotel.hotelDetailInfo.lastCheckinTime ? hotel.hotelDetailInfo.lastCheckinTime : "") + "</td>"
+      + "<td><a href='" + hotel.hotelInformationUrl + "' target='_blank'>" + toHalfWidth(hotel.hotelName) + "</a></td>"
+      + "<td>" + hotel.checkinTime + "-" + (hotel.lastCheckinTime ? hotel.lastCheckinTime : "") + "</td>"
       + "<td>" + (hasCoinLaundry(hotel) ? "✓" : "") + "</td>"
     
     const infowindow = new google.maps.InfoWindow({
-      content: "<a href='" + hotel.hotelBasicInfo.hotelInformationUrl + "' target='_blank'>" + toHalfWidth(hotel.hotelBasicInfo.hotelName) + "</a>"
-        + "<br><br>チェックイン時間: " + hotel.hotelDetailInfo.checkinTime + "-" + (hotel.hotelDetailInfo.lastCheckinTime ? hotel.hotelDetailInfo.lastCheckinTime : "")
+      content: "<a href='" + hotel.hotelInformationUrl + "' target='_blank'>" + toHalfWidth(hotel.hotelName) + "</a>"
+        + "<br><br>チェックイン時間: " + hotel.checkinTime + "-" + (hotel.lastCheckinTime ? hotel.lastCheckinTime : "")
         + "<br>洗濯機: " + (hasCoinLaundry(hotel) ? "あり" : "なし")
-        + "<br>最安値: " + (hotel.hotelBasicInfo.hotelMinCharge ? (hotel.hotelBasicInfo.hotelMinCharge + "円") : "情報なし")
+        + "<br>最安値: " + (hotel.hotelMinCharge ? (hotel.hotelMinCharge + "円") : "情報なし")
         + "<br><br>"
-        + (hotel.hotelBasicInfo.hotelThumbnailUrl ? "<img src='" + hotel.hotelBasicInfo.hotelThumbnailUrl + "'/>" : "")
-        + (hotel.hotelBasicInfo.roomThumbnailUrl ? "<img src='" + hotel.hotelBasicInfo.roomThumbnailUrl + "'/>" : "")
+        + (hotel.hotelThumbnailUrl ? "<img src='" + hotel.hotelThumbnailUrl + "'/>" : "")
+        + (hotel.roomThumbnailUrl ? "<img src='" + hotel.roomThumbnailUrl + "'/>" : "")
     });
-    const color = (hotel.hotelDetailInfo.lastCheckinTime ? ((hhmm) => {
+    const color = (hotel.lastCheckinTime ? ((hhmm) => {
       if(hhmm <= "18:00"){
         return "f00";
       }else if(hhmm <= "20:00"){
@@ -554,10 +480,10 @@ function showHotelList(){
       }else{
         return "0ff";
       }
-    })(hotel.hotelDetailInfo.lastCheckinTime) : "ffffff");
+    })(hotel.lastCheckinTime) : "ffffff");
     const marker = new google.maps.Marker({
-      position: {lat: hotel.hotelBasicInfo.latitude, lng: hotel.hotelBasicInfo.longitude},
-      title: toHalfWidth(hotel.hotelBasicInfo.hotelName),
+      position: {lat: hotel.latitude, lng: hotel.longitude},
+      title: toHalfWidth(hotel.hotelName),
       icon: {
         path: "M41.01.397c22.43 0 40.614 18.021 40.614 40.25 0 22.233-40.614 95.132-40.614 95.132S.397 62.879.397 40.648C.397 18.418 18.58.397 41.01.397z",
         fillColor: '#' + color,
