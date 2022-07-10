@@ -505,7 +505,7 @@ function showHotelList(){
           infowindow.setContent(
             "<a href='" + hotel.hotelInformationUrl + "' target='_blank'>" + toHalfWidth(hotel.hotelName) + "</a>"
             + "<br><br>チェックイン時間: " + hotel.checkinTime + "-" + (hotel.lastCheckinTime ? hotel.lastCheckinTime : "")
-            + "<br>洗濯機: " + (hasCoinLaundry(hotel) ? "あり" : "なし")
+            + "<br>洗濯機: " + (hotel.hotelFacilities.some(e=>e.item.match(/コインランドリー/)) ? "あり" : "なし")
             + "<br>最安値: " + (hotel.hotelMinCharge ? (hotel.hotelMinCharge + "円") : "情報なし")
             + "<br><br>"
             + (hotel.hotelThumbnailUrl ? "<img src='" + hotel.hotelThumbnailUrl + "'/>" : "")
