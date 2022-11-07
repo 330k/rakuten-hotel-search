@@ -25,28 +25,28 @@ const hotel_data = {
 };
 const promise_queue = new PromiseQueue();
 function PromiseQueue(){
-  let _queue = [];
-  let _state = "STOPPED";
+  this._queue = [];
+  this._state = "STOPPED";
   
   this._execute = function(){
-    if(_queue.length > 0){
-      if(_state === "STOPPED"){
-        _state = "EXECUTING";
+    if(this._queue.length > 0){
+      if(this._state === "STOPPED"){
+        this._state = "EXECUTING";
 
-        const func = _queue[0];
+        const func = this._queue[0];
         func().then(() => {
-          _queue.shift();
-          _state = "STOPPED";
+          this._queue.shift();
+          this._state = "STOPPED";
           this._execute();
         });
       }
     }else{
-      _state = "STOPPED";
+      this._state = "STOPPED";
     }
   };
   
   this.enqueue = function(func){
-    _queue.push(func);
+    this._queue.push(func);
     
     this._execute();
   };
