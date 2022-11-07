@@ -23,6 +23,8 @@ const hotel_data = {
   detail_info: new Map(),
   display_info: []
 };
+
+// キューに入れられたPromiseを1つずつ実行する
 const promise_queue = new PromiseQueue();
 function PromiseQueue(){
   this._queue = [];
@@ -38,6 +40,11 @@ function PromiseQueue(){
           this._queue.shift();
           this._state = "STOPPED";
           this._execute();
+        }).catch((err) => {
+          console.error(err);
+          this._queue.shift();
+          this._state = "STOPPED";
+          this._execute();
         });
       }
     }else{
@@ -45,6 +52,10 @@ function PromiseQueue(){
     }
   };
   
+  /**
+   *
+   * @param {Function} func Promiseを返す関数
+   */
   this.enqueue = function(func){
     this._queue.push(func);
     
@@ -537,6 +548,17 @@ function showHotelList(){
         promise_queue.enqueue(function(){
           return new Promise((resolve, reject) => {
             let hotel = hotel_data.detail_info.get(hotel_no);
+            const setHotelInfo = function(infowindow, hotel){
+              infowindow.setContent(
+                "<a href='" + hotel.hotelInformationUrl + "' target='_blank'>" + toHalfWidth(hotel.hotelName) + "</a>"
+                + "<br><br>チェックイン時間: " + hotel.checkinTime + "-" + (hotel.lastCheckinTime ? hotel.lastCheckinTime : "")
+                + "<br>洗濯機: " + (hotel.hotelFacilities.some(e=>e.item.match(/コインランドリー/)) ? "あり" : "なし")
+                + "<br>最安値: " + (hotel.hotelMinCharge ? (hotel.hotelMinCharge + "円") : "情報なし")
+                + "<br><br>"
+                + (hotel.hotelThumbnailUrl ? "<img src='" + hotel.hotelThumbnailUrl + "'/>" : "")
+                + (hotel.roomThumbnailUrl ? "<img src='" + hotel.roomThumbnailUrl + "'/>" : "")
+              );
+            };
             
             if(hotel === undefined){
               hotel = {};
@@ -557,25 +579,22 @@ function showHotelList(){
                 }
                 hotel_data.detail_info.set(hotel_no, hotel);
                 
-                infowindow.setContent(
-                  "<a href='" + hotel.hotelInformationUrl + "' target='_blank'>" + toHalfWidth(hotel.hotelName) + "</a>"
-                  + "<br><br>チェックイン時間: " + hotel.checkinTime + "-" + (hotel.lastCheckinTime ? hotel.lastCheckinTime : "")
-                  + "<br>洗濯機: " + (hotel.hotelFacilities.some(e=>e.item.match(/コインランドリー/)) ? "あり" : "なし")
-                  + "<br>最安値: " + (hotel.hotelMinCharge ? (hotel.hotelMinCharge + "円") : "情報なし")
-                  + "<br><br>"
-                  + (hotel.hotelThumbnailUrl ? "<img src='" + hotel.hotelThumbnailUrl + "'/>" : "")
-                  + (hotel.roomThumbnailUrl ? "<img src='" + hotel.roomThumbnailUrl + "'/>" : "")
-                );
-                
+                setHotelInfo(infowindow, hotel);
                 infowindow.loadstatus = "completed";
                 resolve();
+                
               }).catch((err) => {
                 console.error(err);
                 infowindow.loadstatus = "error";
                 infowindow.setContent("error");
                 hotel_data.detail_info.delete(hotel_no);
                 reject();
+                
               });
+            }else{
+              setHotelInfo(infowindow, hotel);
+                
+              resolve();
             }
           });
         });
