@@ -42,7 +42,8 @@ Promise.all([new Promise(function(resolve, reject){
   /*fetch("hotel_info_summary.json").then((response) => {
     return response.json();
   }).then((json) => {*/
-  lcache.fetch("hotel_info_summary.json").then((json) => {
+  //lcache.fetch("hotel_info_summary.json").then((json) => {
+  lcache.fetch("https://script.google.com/macros/s/AKfycbwRwOIja_IyulhaCHB5S_AeGzeUSoLUkUtHBLho8LhsCN1tq7mrMqPjp17V8OkzZlAj/exec?method=JSON_SUMMARY").then((json) => {
     hotel_data.summary_info = json;
     console.log("hotel database loaded");
     
@@ -406,8 +407,8 @@ async function searchHotels(){
  */
 function showHotelList(){
   googlemap.hotelmarkers = [];
-  const ele_tbody = document.getElementById("tbody_hotel");
-  ele_tbody.innerHTML = "";
+  const ele_list = document.getElementById("result_list");
+  ele_list.innerHTML = "";
 
   const hasCoinLaundry = (hotel) => hotel.laundry;
   
@@ -455,13 +456,14 @@ function showHotelList(){
     const hotel = hotels_displayed[i];
     const hotel_no = hotel.hotelNo;
     const hotel_row_id = "hotel_" + hotel_no;
-    const ele_tr = document.createElement("tr");
+    const ele_row = document.createElement("div");
     
-    ele_tr.id = hotel_row_id;
-    ele_tr.innerHTML = "<td>" + (i + 1) + "</td>"
-      + "<td>" + toHalfWidth(hotel.hotelName) + "</td>"
-      + "<td>" + hotel.checkinTime + "-" + (hotel.lastCheckinTime ? hotel.lastCheckinTime : "") + "</td>"
-      + "<td>" + (hasCoinLaundry(hotel) ? "✓" : "") + "</td>"
+    ele_row.id = hotel_row_id;
+    ele_row.classList.add("hotel_row");
+    ele_row.innerHTML = "<div class='hotel_number'>" + (i + 1) + "</div>"
+      + "<div class='hotel_name'>" + toHalfWidth(hotel.hotelName) + "</div>"
+      + "<div class='hotel_checkin'>" + hotel.checkinTime + "-" + (hotel.lastCheckinTime ? hotel.lastCheckinTime : "") + "</div>"
+      + "<div class='hotel_laundry'>" + (hasCoinLaundry(hotel) ? "✓" : "") + "</div>"
     
     const color = (hotel.lastCheckinTime ? ((hhmm) => {
       if(hhmm <= "18:00"){
@@ -532,11 +534,9 @@ function showHotelList(){
               hotel = {};
               const appid = "1008123474471814322";
               const affid = "219cb501.2d23fbc2.219cb502.49f3944c";
+              const url = `https://app.rakuten.co.jp/services/api/Travel/SimpleHotelSearch/20170426?applicationId=${appid}&affiliateId=${affid}&format=json&formatVersion=2&datumType=1&responseType=large&hotelNo=${hotel_no}`;
               
-              /*fetch(`https://app.rakuten.co.jp/services/api/Travel/SimpleHotelSearch/20170426?applicationId=${appid}&affiliateId=${affid}&format=json&formatVersion=2&datumType=1&responseType=large&hotelNo=${hotel_no}`).then((response) => {
-                return response.json();
-              }).then((json) => {*/
-              lcache.fetch(`https://app.rakuten.co.jp/services/api/Travel/SimpleHotelSearch/20170426?applicationId=${appid}&affiliateId=${affid}&format=json&formatVersion=2&datumType=1&responseType=large&hotelNo=${hotel_no}`).then((json) => {
+              lcache.fetch(url).then((json) => {
                 for(let i in json.hotels){
                   for(let j in json.hotels[i]){
                     for(let k in json.hotels[i][j]){
@@ -557,6 +557,7 @@ function showHotelList(){
                 infowindow.loadstatus = "error";
                 infowindow.setContent("error");
                 hotel_data.detail_info.delete(hotel_no);
+                lcache.delete(url);
                 reject();
                 
               });
@@ -584,7 +585,7 @@ function showHotelList(){
       }
     });
     marker.addListener("mouseover", (evt) => {
-      ele_tr.classList.add("hotel_selected");
+      ele_row.classList.add("hotel_selected");
       infowindow.open({
         anchor: marker,
         map: googlemap.map,
@@ -592,22 +593,22 @@ function showHotelList(){
       });
     });
     marker.addListener("mouseout", (evt) => {
-      ele_tr.classList.remove("hotel_selected");
+      ele_row.classList.remove("hotel_selected");
       if(!infowindow.clicked){
         infowindow.close();
       }
     });
     
-    ele_tr.addEventListener("mouseover", (evt) => {
-      ele_tr.classList.add("hotel_selected");
+    ele_row.addEventListener("mouseover", (evt) => {
+      ele_row.classList.add("hotel_selected");
       infowindow.open({
         anchor: marker,
         map: googlemap.map,
         shouldFocus: false,
       });
     });
-    ele_tr.addEventListener("mouseout", (evt) => {
-      ele_tr.classList.remove("hotel_selected");
+    ele_row.addEventListener("mouseout", (evt) => {
+      ele_row.classList.remove("hotel_selected");
       if(!infowindow.clicked){
         infowindow.close();
       }
@@ -616,7 +617,7 @@ function showHotelList(){
       infowindow.clicked = false;
     });
     
-    ele_tbody.appendChild(ele_tr);
+    ele_list.appendChild(ele_row);
     googlemap.hotelmarkers.push(marker);
   }
 
@@ -777,6 +778,16 @@ function LayeredCache(cache_name, parser, l1_cache_size = 1000, cache_expiration
     return data;
   };
   
+  /**
+   * キャッシュから指定したURLを削除する
+   */
+  this.delete = async function(url){
+    if(l1_cache.has(url)){
+      l1_cache.delete(url);
+    }
+    await l2_cache.delete(url);
+  };
+  
   return this;
 }
 
@@ -856,32 +867,56 @@ if (!doNotTrack) {
   padding: 5px;
 }
 
-#left_panel #result_table{
+#left_panel #result_panel{
   flex: 1;
   overflow-x: hidden;
   overflow-y: scroll;
 }
 
-#left_panel table {
-  border-collapse: collapse;
-  width: 100%;
-}
-#left_panel table thead {
+#result_list_head {
+  display:flex;
   background-color: #eee;
   position: sticky;
   top: 0;
   left: 0;
-}
-#left_panel table tbody {
-  
-}
-#left_panel table td {
-  border-width: 1px 0;
-  border-color: gray;
-  border-style: solid;
+  font-weight: bold;
   text-align: center;
-  max-height: 2em;
+  line-height: 2em;
+}
+#hotel_list {
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+.hotel_row {
+  width: 100%;
+  height: 2em;
+  display: flex;
+  border-width: 0 0 1px 0;
+  border-style: solid;
+  border-color: #ddd;
+}
+.hotel_number {
+  flex: 0 0 2em;
+  text-align: center;
+  line-height: 2em;
+}
+.hotel_name {
+  flex: 1;
+  text-overflow: ellipsis;
   overflow: hidden;
+  vertical-align: middle;
+  margin: auto;
+  max-height: 2em;
+}
+.hotel_checkin {
+  flex: 0 0 7em;
+  text-align: center;
+  line-height: 2em;
+}
+.hotel_laundry {
+  flex: 0 0 1em;
+  text-align: center;
+  line-height: 2em;
 }
 
 #loader_bg {
@@ -977,17 +1012,11 @@ if (!doNotTrack) {
   <div><label><input type="checkbox" id="show_hotels_without_last_checkin" checked>最終チェックイン時刻の情報がない宿も表示<label></div>
   <div><label><input type="checkbox" id="laundry_exists">洗濯機が有る宿のみ表示<label></div>
   <div><label title="価格情報がない宿は営業していない可能性があります"><input type="checkbox" id="price_info_exists">最低価格情報が有る宿のみ表示<label></div>
-  <!--<div><label><input type="checkbox" id="preserve_results">クリック時に以前検索した結果に追記する<label></div>-->
 </fieldset>
 </div>
-<div id="result_table">
-<table id="table_hotels">
-<thead>
-<tr><th style="width: 2em;">No</th><th>ホテル名</th><th style="width: 11em;">チェックイン</th><th style="width: 4em;">洗濯機</th></tr>
-</thead>
-<tbody id="tbody_hotel">
-</tbody>
-</table>
+<div id="result_panel">
+<div id="result_list_head" class="hotel_list"><div class="hotel_number">No</div><div class="hotel_name">ホテル名</div><div class="hotel_checkin">チェックイン</div><div class="hotel_laundry">洗</div></div>
+<div id="result_list"></div>
 </div>
 <div id="message"></div>
 </div>
