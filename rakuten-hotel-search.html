@@ -8,13 +8,25 @@
 <meta property="og:url" content="https://www.330k.info/software/rakuten-hotel-search/rakuten-hotel-search.html" />
 <meta property="og:image" content="https://www.330k.info/apple-touch-icon.png"/>
 <!--<meta name="viewport" content="width=640">-->
-<script src="./gunzip.min.js"></script>
+<link rel="favicon" href="rakuten_travel_logo_32x32.png">
+<link rel="manifest" href="manifest.json">
+<script defer>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function() {
+    navigator.serviceWorker.register("sw.js").then(function(registration) {
+      //Service Worker(sw.js)が登録できたら特に何もしない。
+    }, function(err) {
+      //Service Worker(sw.js)の登録が失敗した場合はブラウザにログを出す。
+      console.log("ServiceWorker registration failed: ", err);
+    });
+  });
+}
+</script>
 <script defer src="https://maps.google.com/maps/api/js?key=AIzaSyA_aFkNjCuqBNETe8bxBk8_cnRQtQzdOG8&amp;callback=initMap"></script>
-<script>
+<script defer>
 const googlemap = {
   map: null,
   hotelmarkers: [],
-  searchareacircle: null,
   gpxtracks: [],
   dist_marker: null
 };
@@ -23,6 +35,7 @@ const hotel_data = {
   detail_info: new Map(),
   display_info: []
 };
+const gpx_data = [];
 const promise_queue = new PromiseQueue();
 const lcache = new LayeredCache("rakuten-hotel-cache", function(response){
   if(response.ok){
@@ -47,31 +60,29 @@ Promise.all([new Promise(function(resolve, reject){
     hotel_data.summary_info = json;
     console.log("hotel database loaded");
     
-    /* // 全部のホテルを表示してみる(激重)
-    for(const info of hotel_data.summary_info){
-      if((info.latitude > 0) && (info.longitude > 0)){
-        const m = new google.maps.Marker({
-          map: googlemap.map,
-          position: { lat: info.latitude, lng: info.longitude },
-          icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            strokeColor: "#000",
-            strokeWeight: 3,
-            fillColor: "#000",
-            fillOpacity: 1,
-            optimized: true
-          },
-          title: info.hotelName
-        });
-      }else{
-        console.error(info);
-      }
-    }
-    */
     resolve();
   });
   
 })]).then(() => {
+  // 全部のホテルを表示してみる
+  for(const info of hotel_data.summary_info){
+    if((info.latitude > 0) && (info.longitude > 0)){
+      const m = new google.maps.Marker({
+        map: googlemap.map,
+        position: { lat: info.latitude, lng: info.longitude },
+        icon: {
+          url: `https://maps.google.com/mapfiles/kml/paddle/red-circle-lv.png`,
+          anchor: new google.maps.Point(5, 5),
+          scaledSize: new google.maps.Size(10, 10)
+        },
+        title: info.hotelName
+      });
+    }else{
+      console.error(info);
+    }
+  }
+  //*/
+  
   clearResult();
   hideLoader();
 });
@@ -308,6 +319,32 @@ function showGPXRoute(map, coords, color, filename){
   line_transparent.setMap(map);
 }
 
+/**
+ * Google Mapsの表示範囲を調整
+ */
+function fitBounds(){
+  if(gpx_data.length > 0){
+    let min_lat = Number.MAX_VALUE;
+    let min_lng = Number.MAX_VALUE;
+    let max_lat = -Number.MAX_VALUE;
+    let max_lng = -Number.MAX_VALUE;
+    for(const t of gpx_data){
+      for(const c of t){
+        if(c.lat < min_lat) min_lat = c.lat;
+        if(c.lng < min_lng) min_lng = c.lng;
+        if(c.lat > max_lat) max_lat = c.lat;
+        if(c.lng > max_lng) max_lng = c.lng;
+      }
+    }
+    googlemap.map.fitBounds({
+      south: min_lat,
+      west: min_lng,
+      north: max_lat,
+      east: max_lng
+    });
+  }
+}
+
 window.addEventListener("DOMContentLoaded", function(){
   // 検索条件
   document.querySelectorAll("#search_conditions input,select").forEach((ele) => {
@@ -326,6 +363,7 @@ window.addEventListener("DOMContentLoaded", function(){
     try{
       showLoader();
 
+      gpx_data.length = 0;
       googlemap.gpxtracks.map((e) => {
         e.setMap(null);
       });
@@ -343,6 +381,7 @@ window.addEventListener("DOMContentLoaded", function(){
         }
         
         if(coords){
+          gpx_data.push(coords);
           showGPXRoute(googlemap.map, coords, colors[i % colors.length], evt.target.files[i].name);
         }
       }
@@ -352,6 +391,7 @@ window.addEventListener("DOMContentLoaded", function(){
 
     }finally{
       hideLoader();
+      fitBounds();
       
     }
   });
@@ -460,8 +500,9 @@ function showHotelList(){
     
     ele_row.id = hotel_row_id;
     ele_row.classList.add("hotel_row");
+    const href = "http://hb.afl.rakuten.co.jp/hgc/219cb501.2d23fbc2.219cb502.49f3944c/?pc=" + encodeURIComponent("https://img.travel.rakuten.co.jp/image/tr/api/hs/dQ4dX/?f_no=" + hotel_no);
     ele_row.innerHTML = "<div class='hotel_number'>" + (i + 1) + "</div>"
-      + "<div class='hotel_name'>" + toHalfWidth(hotel.hotelName) + "</div>"
+      + "<div class='hotel_name'>" + "<a href='" + href + "' target='_blank'>" + toHalfWidth(hotel.hotelName) + "</a></div>"
       + "<div class='hotel_checkin'>" + hotel.checkinTime + "-" + (hotel.lastCheckinTime ? hotel.lastCheckinTime : "") + "</div>"
       + "<div class='hotel_laundry'>" + (hasCoinLaundry(hotel) ? "✓" : "") + "</div>"
     
@@ -503,6 +544,38 @@ function showHotelList(){
       optimized: true,
       map: googlemap.map
     });
+    /*
+    const color = (hotel.lastCheckinTime ? ((hhmm) => {
+      if(hhmm <= "18:00"){
+        return "red";
+      }else if(hhmm <= "20:00"){
+        return "orange";
+      }else if(hhmm <= "22:00"){
+        return "ylw";
+      }else if(hhmm <= "24:00"){
+        return "grn";
+      }else if(hhmm <= "26:00"){
+        return "blu";
+      }else if(hhmm <= "28:00"){
+        return "gray";
+      }else{
+        return "wht";
+      }
+    })(hotel.lastCheckinTime) : "black");
+    const marker = new google.maps.Marker({
+      position: {lat: hotel.latitude, lng: hotel.longitude},
+      title: toHalfWidth(hotel.hotelName),
+      icon: {
+        url: `https://maps.google.com/mapfiles/kml/paddle/${color}-blank.png`
+      },
+      label: {
+        text: `${i + 1}`,
+        fontWeight: (hasCoinLaundry(hotel) ? "bold" : "normal")
+      },
+      zIndex: 2000 - i,
+      optimized: true,
+      map: googlemap.map
+    });*/
     
     const infowindow = new google.maps.InfoWindow({
       content: ""
@@ -571,7 +644,12 @@ function showHotelList(){
       }
     });
 
-    marker.addListener("click", (evt) => {
+    const addListener = function(event, func){
+      marker.addListener(event, func);
+      ele_row.addEventListener(event, func);
+    };
+    addListener("click", (evt) => {
+      // クリックされたときは表示させたままにする
       if(!infowindow.clicked){
         infowindow.open({
           anchor: marker,
@@ -584,7 +662,7 @@ function showHotelList(){
         infowindow.clicked = false;
       }
     });
-    marker.addListener("mouseover", (evt) => {
+    addListener("mouseover", (evt) => {
       ele_row.classList.add("hotel_selected");
       infowindow.open({
         anchor: marker,
@@ -592,29 +670,11 @@ function showHotelList(){
         shouldFocus: false,
       });
     });
-    marker.addListener("mouseout", (evt) => {
+    addListener("mouseout", (evt) => {
       ele_row.classList.remove("hotel_selected");
       if(!infowindow.clicked){
         infowindow.close();
       }
-    });
-    
-    ele_row.addEventListener("mouseover", (evt) => {
-      ele_row.classList.add("hotel_selected");
-      infowindow.open({
-        anchor: marker,
-        map: googlemap.map,
-        shouldFocus: false,
-      });
-    });
-    ele_row.addEventListener("mouseout", (evt) => {
-      ele_row.classList.remove("hotel_selected");
-      if(!infowindow.clicked){
-        infowindow.close();
-      }
-    });
-    infowindow.addListener( "closeclick", function(evt){
-      infowindow.clicked = false;
     });
     
     ele_list.appendChild(ele_row);
@@ -628,11 +688,6 @@ function showHotelList(){
  * 結果を初期化
  */
 function clearResult(){
-  if(googlemap.searchareacircle){
-    googlemap.searchareacircle.setMap(null);
-  }
-  googlemap.searchareacircle = null;
-
   googlemap.hotelmarkers.map((e) => {
     e.setMap(null);
   });
@@ -852,7 +907,9 @@ if (!doNotTrack) {
   flex: 1;
 }
 #left_panel {
-  flex: 0 1 25%;
+  flex: 0 1 30%;
+  min-width: 300px;
+  max-width: 400px;
   background-color: #fff;
   display: flex;
   flex-direction: column;
