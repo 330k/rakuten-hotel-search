@@ -27,6 +27,7 @@ if ("serviceWorker" in navigator) {
 const googlemap = {
   map: null,
   hotelmarkers: [],
+  all_hotel_markers: [],
   gpxtracks: [],
   dist_marker: null
 };
@@ -57,32 +58,13 @@ Promise.all([new Promise(function(resolve, reject){
   }).then((json) => {*/
   //lcache.fetch("hotel_info_summary.json").then((json) => {
   lcache.fetch("https://script.google.com/macros/s/AKfycbwRwOIja_IyulhaCHB5S_AeGzeUSoLUkUtHBLho8LhsCN1tq7mrMqPjp17V8OkzZlAj/exec?method=JSON_SUMMARY").then((json) => {
-    hotel_data.summary_info = json;
+    hotel_data.summary_info = json.filter(e => ((e.longitude > 0) && (e.latitude > 0)));
     console.log("hotel database loaded");
     
     resolve();
   });
   
 })]).then(() => {
-  // 全部のホテルを表示してみる
-  for(const info of hotel_data.summary_info){
-    if((info.latitude > 0) && (info.longitude > 0)){
-      const m = new google.maps.Marker({
-        map: googlemap.map,
-        position: { lat: info.latitude, lng: info.longitude },
-        icon: {
-          url: `https://maps.google.com/mapfiles/kml/paddle/red-circle-lv.png`,
-          anchor: new google.maps.Point(5, 5),
-          scaledSize: new google.maps.Size(10, 10)
-        },
-        title: info.hotelName
-      });
-    }else{
-      console.error(info);
-    }
-  }
-  //*/
-  
   clearResult();
   hideLoader();
 });
@@ -357,6 +339,12 @@ window.addEventListener("DOMContentLoaded", function(){
     });
   });
   
+  document.getElementById("show_all_hotels").addEventListener("change", function(evt){
+    const val = document.getElementById("show_all_hotels").checked;
+    
+    showAllHotels(val);
+  });
+  
   // GPX読み込み対応
   document.getElementById("gpx_file").addEventListener("change", async function(evt){
     // GPXファイルの読み込み
@@ -425,6 +413,40 @@ window.addEventListener("DOMContentLoaded", function(){
 });
 
 /**
+ * すべてのホテルを表示/非表示
+ */
+function showAllHotels(visible){
+  showLoader();
+  
+  setTimeout(function(){
+    if(visible){
+      for(const info of hotel_data.summary_info){
+        if((info.latitude > 0) && (info.longitude > 0)){
+          const m = new google.maps.Marker({
+            map: googlemap.map,
+            position: { lat: info.latitude, lng: info.longitude },
+            icon: {
+              url: `https://maps.google.com/mapfiles/kml/paddle/red-circle-lv.png`,
+              anchor: new google.maps.Point(5, 5),
+              scaledSize: new google.maps.Size(10, 10)
+            },
+            title: info.hotelName
+          });
+          googlemap.all_hotel_markers.push(m);
+          
+        }else{
+          console.error(info);
+        }
+      }
+    }else{
+      googlemap.all_hotel_markers.map(e => e.setMap(null));
+    }
+    
+    hideLoader();
+  }, 1);
+}
+
+/**
  * ホテル検索するGoogle Mapsイベントハンドラ
  * @param {google.maps.MapMouseEvent} evt
  * */
@@ -485,12 +507,12 @@ function showHotelList(){
       return hasCoinLaundry(hotel);
     });
   }
-  // 絞り込み(価格情報)
+  /*// 絞り込み(価格情報)
   if(document.getElementById("price_info_exists").checked){
     hotels_displayed = hotels_displayed.filter((hotel) => {
       return !!hotel.hotelMinCharge;
     });
-  }
+  }*/
 
   for(i = 0; i < hotels_displayed.length; i++){
     const hotel = hotels_displayed[i];
@@ -544,38 +566,6 @@ function showHotelList(){
       optimized: true,
       map: googlemap.map
     });
-    /*
-    const color = (hotel.lastCheckinTime ? ((hhmm) => {
-      if(hhmm <= "18:00"){
-        return "red";
-      }else if(hhmm <= "20:00"){
-        return "orange";
-      }else if(hhmm <= "22:00"){
-        return "ylw";
-      }else if(hhmm <= "24:00"){
-        return "grn";
-      }else if(hhmm <= "26:00"){
-        return "blu";
-      }else if(hhmm <= "28:00"){
-        return "gray";
-      }else{
-        return "wht";
-      }
-    })(hotel.lastCheckinTime) : "black");
-    const marker = new google.maps.Marker({
-      position: {lat: hotel.latitude, lng: hotel.longitude},
-      title: toHalfWidth(hotel.hotelName),
-      icon: {
-        url: `https://maps.google.com/mapfiles/kml/paddle/${color}-blank.png`
-      },
-      label: {
-        text: `${i + 1}`,
-        fontWeight: (hasCoinLaundry(hotel) ? "bold" : "normal")
-      },
-      zIndex: 2000 - i,
-      optimized: true,
-      map: googlemap.map
-    });*/
     
     const infowindow = new google.maps.InfoWindow({
       content: ""
@@ -675,6 +665,9 @@ function showHotelList(){
       if(!infowindow.clicked){
         infowindow.close();
       }
+    });
+    infowindow.addListener("closeclick", (evt) => {
+      infowindow.clicked = false;
     });
     
     ele_list.appendChild(ele_row);
@@ -1040,7 +1033,7 @@ if (!doNotTrack) {
 <div id="left_panel">
 <div id="search_conditions">
 <fieldset>
-  <legend>検索条件</legend>
+ <legend>検索条件</legend>
   <div>最終チェックイン時刻: <select id="last_checkin_min">
    <option value="00:00" selected>すべて</option>
    <option value="15:00">15:00</option>
@@ -1066,14 +1059,26 @@ if (!doNotTrack) {
    <option value="27:00">27:00</option>
    <option value="99:99" selected>すべて</option>
   </select></div>
-  <div><label><input type="checkbox" id="show_hotels_without_last_checkin" checked>最終チェックイン時刻の情報がない宿も表示<label></div>
-  <div><label><input type="checkbox" id="laundry_exists">洗濯機が有る宿のみ表示<label></div>
-  <div><label title="価格情報がない宿は営業していない可能性があります"><input type="checkbox" id="price_info_exists">最低価格情報が有る宿のみ表示<label></div>
+  <div><label><input type="checkbox" id="show_hotels_without_last_checkin" checked>最終チェックイン時刻の情報がない宿も表示</label></div>
+  <div><label><input type="checkbox" id="laundry_exists">洗濯機が有る宿のみ表示</label></div>
+  <!--<div><label title="価格情報がない宿は営業していない可能性があります"><input type="checkbox" id="price_info_exists">最低価格情報が有る宿のみ表示</label></div>-->
+</fieldset>
+<fieldset>
+ <legend>その他機能</legend>
+ <div><button onclick="document.getElementById('gpx_file').click();">GPXファイル読み込み</button><input type="file" id="gpx_file" accept=".gpx" /></div>
+ <div><label><input type="checkbox" id="show_all_hotels">すべてのホテルの位置を表示</label></div>
 </fieldset>
 </div>
 <div id="result_panel">
 <div id="result_list_head" class="hotel_list"><div class="hotel_number">No</div><div class="hotel_name">ホテル名</div><div class="hotel_checkin">チェックイン</div><div class="hotel_laundry">洗</div></div>
 <div id="result_list"></div>
+<!--<div id="usage">
+ <ul>
+  <li>地図上をクリックで範囲内のホテルを検索
+  <li>チェックイン時刻や洗濯機の有無で絞り込み
+  <li>地図上を右クリックで検索結果をクリア
+ </ul>
+</div>-->
 </div>
 <div id="message"></div>
 </div>
@@ -1085,7 +1090,6 @@ if (!doNotTrack) {
 <img src="data:image/svg+xml,%3Csvg width='32' height='32' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='xMidYMid' class='uil-spin'%3E%3Cpath fill='none' class='bk' d='M0 0h100v100H0z'/%3E%3Cg transform='translate(84 50)'%3E%3Ccircle r='8'%3E%3Canimate attributeName='opacity' from='1' to='.1' begin='0s' dur='1s' repeatCount='indefinite'/%3E%3CanimateTransform attributeName='transform' type='scale' from='1.5' to='1' begin='0s' dur='1s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/g%3E%3Cg transform='rotate(45 -52.355 126.397)'%3E%3Ccircle r='8'%3E%3Canimate attributeName='opacity' from='1' to='.1' begin='0.12s' dur='1s' repeatCount='indefinite'/%3E%3CanimateTransform attributeName='transform' type='scale' from='1.5' to='1' begin='0.12s' dur='1s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/g%3E%3Cg transform='rotate(90 -17 67)'%3E%3Ccircle r='8'%3E%3Canimate attributeName='opacity' from='1' to='.1' begin='0.25s' dur='1s' repeatCount='indefinite'/%3E%3CanimateTransform attributeName='transform' type='scale' from='1.5' to='1' begin='0.25s' dur='1s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/g%3E%3Cg transform='rotate(135 -2.355 42.397)'%3E%3Ccircle r='8'%3E%3Canimate attributeName='opacity' from='1' to='.1' begin='0.37s' dur='1s' repeatCount='indefinite'/%3E%3CanimateTransform attributeName='transform' type='scale' from='1.5' to='1' begin='0.37s' dur='1s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/g%3E%3Cg transform='rotate(180 8 25)'%3E%3Ccircle r='8'%3E%3Canimate attributeName='opacity' from='1' to='.1' begin='0.5s' dur='1s' repeatCount='indefinite'/%3E%3CanimateTransform attributeName='transform' type='scale' from='1.5' to='1' begin='0.5s' dur='1s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/g%3E%3Cg transform='rotate(-135 18.355 7.603)'%3E%3Ccircle r='8'%3E%3Canimate attributeName='opacity' from='1' to='.1' begin='0.62s' dur='1s' repeatCount='indefinite'/%3E%3CanimateTransform attributeName='transform' type='scale' from='1.5' to='1' begin='0.62s' dur='1s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/g%3E%3Cg transform='rotate(-90 33 -17)'%3E%3Ccircle r='8'%3E%3Canimate attributeName='opacity' from='1' to='.1' begin='0.75s' dur='1s' repeatCount='indefinite'/%3E%3CanimateTransform attributeName='transform' type='scale' from='1.5' to='1' begin='0.75s' dur='1s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/g%3E%3Cg transform='rotate(-45 68.355 -76.397)'%3E%3Ccircle r='8'%3E%3Canimate attributeName='opacity' from='1' to='.1' begin='0.87s' dur='1s' repeatCount='indefinite'/%3E%3CanimateTransform attributeName='transform' type='scale' from='1.5' to='1' begin='0.87s' dur='1s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/g%3E%3C/svg%3E" width="128" height="128">
 </div>
 </div>
-<input type="file" id="gpx_file" accept=".gpx" />
 <div id="overlay"></div>
 <div id="dist_info"></div>
 </body>
