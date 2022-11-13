@@ -6,8 +6,8 @@
 <meta property="og:description" content="最終チェックイン時刻と洗濯機の有無の一覧を表示する、楽天トラベルAPIを使った簡易ホテル検索ツールです。" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://www.330k.info/software/rakuten-hotel-search/rakuten-hotel-search.html" />
-<meta property="og:image" content="https://www.330k.info/apple-touch-icon.png"/>
-<!--<meta name="viewport" content="width=640">-->
+<meta property="og:image" content="https://www.330k.info/apple-touch-icon.png"/><!--<meta name="viewport" content="width=640">-->
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="favicon" type="image/png"  href="rakuten_travel_logo_32x32.png">
 <link rel="manifest" href="manifest.json">
 <script defer>
@@ -521,10 +521,11 @@ function hotelMarkerColor(hotel){
 function showHotelList(){
   googlemap.hotelmarkers = [];
   const ele_list = document.getElementById("result_list");
+  let count = 0;
   ele_list.innerHTML = "";
 
   // 最終チェックイン時刻が遅い、洗濯機がある順にソート(最大300件)
-  let hotels_displayed = hotel_data.display_info.sort((a,b) => {
+  let hotels_displayed = hotel_data.display_info.filter(e => checkHotelVisibility(e)).sort((a,b) => {
     const c1 = a.lastCheckinTime ? a.lastCheckinTime : "";
     const c2 = b.lastCheckinTime ? b.lastCheckinTime : "";
     
@@ -542,9 +543,6 @@ function showHotelList(){
 
   for(i = 0; i < hotels_displayed.length; i++){
     const hotel = hotels_displayed[i];
-    if(!checkHotelVisibility(hotel)){
-      continue;
-    }
     
     const hotel_no = hotel.hotelNo;
     const hotel_row_id = "hotel_" + hotel_no;
@@ -686,9 +684,10 @@ function showHotelList(){
     
     ele_list.appendChild(ele_row);
     googlemap.hotelmarkers.push(marker);
+    
   }
 
-  document.getElementById("message").innerHTML = "";
+  document.getElementById("message").innerHTML = "検索結果: " + hotels_displayed.length + " 件";
 }
 
 /**
@@ -702,6 +701,7 @@ function clearResult(){
   
   hotel_data.display_info = [];
   showHotelList();
+  document.getElementById("message").innerHTML = "";
 }
 
 function hideLoader(){
@@ -965,6 +965,7 @@ html, body {
 .hotel_row {
   width: 100%;
   height: 2em;
+  line-height: 2em;
   display: flex;
   border-width: 0 0 1px 0;
   border-style: solid;
@@ -973,7 +974,6 @@ html, body {
 .hotel_number {
   flex: 0 0 2em;
   text-align: center;
-  line-height: 2em;
 }
 .hotel_name {
   flex: 1;
@@ -987,12 +987,17 @@ html, body {
 .hotel_checkin {
   flex: 0 0 7em;
   text-align: center;
-  line-height: 2em;
 }
 .hotel_laundry {
   flex: 0 0 1em;
   text-align: center;
-  line-height: 2em;
+}
+
+#message {
+  display: none;
+  flex: 0 0 16px;
+  background: #eee;
+  line-height: 16px;
 }
 
 #loader_bg {
@@ -1052,6 +1057,48 @@ html, body {
   background-color: rgba(240, 240, 240, 0.5);
   display: block;
 }
+
+@media screen and (max-width: 640px){
+  #wrapper {
+    flex-direction: column;
+  }
+  #left_panel {
+    flex: 0 0 50%;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 14px;
+  }
+  #left_panel fieldset {
+    border-width: 0 0 1px 0;
+    margin: 0;
+  }
+  #left_panel legend {
+    display: none;
+  }
+  #left_panel label {
+    white-space: nowrap;
+  }
+  .hotel_row {
+    height: 1em;
+    line-height: 1em;
+  }
+  .hotel_name {
+    max-height: 1em;
+  }
+  #message {
+    display: none;
+  }
+}
+
+  #button_clear_result {
+    display: none;
+  }
+@media (pointer: coarse){
+  #button_clear_result {
+    display: inline-block;
+  }
+}
 </style>
 </head>
 <body>
@@ -1091,7 +1138,10 @@ html, body {
 </fieldset>
 <fieldset>
  <legend>その他機能</legend>
- <div><button onclick="document.getElementById('gpx_file').click();">GPXファイル読み込み</button><input type="file" id="gpx_file" accept=".gpx" /></div>
+ <div>
+  <button onclick="document.getElementById('gpx_file').click();">GPXファイル読み込み</button><input type="file" id="gpx_file" accept=".gpx" />
+  <button id="button_clear_result" onclick="clearResult();">検索結果のクリア</button>
+ </div>
  <div><label><input type="checkbox" id="show_all_hotels">検索条件を満たすすべてのホテルの位置を表示</label></div>
 </fieldset>
 </div>
