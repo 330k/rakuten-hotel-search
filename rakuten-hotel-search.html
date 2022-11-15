@@ -596,9 +596,13 @@ function showHotelList(){
             const setHotelInfo = function(infowindow, hotel){
               infowindow.setContent(
                 "<a href='" + hotel.hotelInformationUrl + "' target='_blank'>" + toHalfWidth(hotel.hotelName) + "</a>"
+                + " - <a href='" + hotel.planListUrl + "' target='_blank'>プラン一覧</a>"
+                + "<br>★: " + hotel.reviewAverage
                 + "<br><br>チェックイン時間: " + hotel.checkinTime + "-" + (hotel.lastCheckinTime ? hotel.lastCheckinTime : "")
                 + "<br>洗濯機: " + (hotel.hotelFacilities.some(e=>e.item.match(/コインランドリー/)) ? "あり" : "なし")
                 + "<br>最安値: " + (hotel.hotelMinCharge ? (hotel.hotelMinCharge + "円") : "情報なし")
+                //+ "<br>TEL: <a href='tel:" + (hotel.telephoneNo) + "'>" + hotel.telephoneNo + "</a>"
+                //+ "<br><br>キャンセルポリシー: " + (hotel.cancelPolicy)
                 + "<br><br>"
                 + (hotel.hotelThumbnailUrl ? "<img src='" + hotel.hotelThumbnailUrl + "'/>" : "")
                 + (hotel.roomThumbnailUrl ? "<img src='" + hotel.roomThumbnailUrl + "'/>" : "")
@@ -1097,6 +1101,12 @@ html, body {
 @media (pointer: coarse){
   #button_clear_result {
     display: inline-block;
+  }
+  .show_smartphone {
+    display: block;
+  }
+  .hide_smartphone {
+    display: none;
   }
 }
 </style>
