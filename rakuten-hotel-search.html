@@ -598,7 +598,7 @@ function showHotelList(){
               infowindow.setContent(
                 "<a href='" + hotel.hotelInformationUrl + "' target='_blank'>" + toHalfWidth(hotel.hotelName) + "</a>"
                 + " - <a href='" + hotel.planListUrl + "' target='_blank'>プラン一覧</a>"
-                + "<br>★: " + hotel.reviewAverage
+                + "<br>★: " + (hotel.reviewAverage ? hotel.reviewAverage : "データなし")
                 + "<br><br>チェックイン時間: " + hotel.checkinTime + "-" + (hotel.lastCheckinTime ? hotel.lastCheckinTime : "")
                 + "<br>洗濯機: " + (hotel.hotelFacilities.some(e=>e.item.match(/コインランドリー/)) ? "あり" : "なし")
                 + "<br>最安値: " + (hotel.hotelMinCharge ? (hotel.hotelMinCharge + "円") : "情報なし")
@@ -1090,6 +1090,7 @@ html, body {
   }
   .hotel_name {
     max-height: 1em;
+    white-space: nowrap;
   }
   #message {
     display: none;
