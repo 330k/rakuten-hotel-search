@@ -11,7 +11,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="favicon" type="image/png"  href="rakuten_travel_logo_32x32.png">
 <link rel="manifest" href="manifest.json">
-<script defer>
+<script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", function() {
     navigator.serviceWorker.register("sw.js").then(function(registration) {
@@ -24,7 +24,7 @@ if ("serviceWorker" in navigator) {
 }
 </script>
 <script defer src="https://maps.google.com/maps/api/js?key=AIzaSyA_aFkNjCuqBNETe8bxBk8_cnRQtQzdOG8&amp;callback=initMap"></script>
-<script defer>
+<script>
 const googlemap = {
   map: null,
   hotelmarkers: [],
@@ -596,17 +596,22 @@ function showHotelList(){
             let hotel = hotel_data.detail_info.get(hotel_no);
             const setHotelInfo = function(infowindow, hotel){
               infowindow.setContent(
-                "<a href='" + hotel.hotelInformationUrl + "' target='_blank'>" + toHalfWidth(hotel.hotelName) + "</a>"
-                + " - <a href='" + hotel.planListUrl + "' target='_blank'>プラン一覧</a>"
-                + "<br>★: " + (hotel.reviewAverage ? hotel.reviewAverage : "データなし")
-                + "<br><br>チェックイン時間: " + hotel.checkinTime + "-" + (hotel.lastCheckinTime ? hotel.lastCheckinTime : "")
-                + "<br>洗濯機: " + (hotel.hotelFacilities.some(e=>e.item.match(/コインランドリー/)) ? "あり" : "なし")
-                + "<br>最安値: " + (hotel.hotelMinCharge ? (hotel.hotelMinCharge + "円") : "情報なし")
+                "<p><a href='" + hotel.hotelInformationUrl + "' target='_blank'>" + toHalfWidth(hotel.hotelName) + "</a>"
+                + " - <a href='" + hotel.planListUrl + "' target='_blank'>プラン一覧</a></p>"
+                + "<p>★: " + (hotel.reviewAverage ? hotel.reviewAverage : "データなし") + "</p>"
+                + "<br><p>チェックイン時間: " + hotel.checkinTime + "-" + (hotel.lastCheckinTime ? hotel.lastCheckinTime : "") + "</p>"
+                + "<p>洗濯機: " + (hotel.hotelFacilities.some(e=>e.item.match(/コインランドリー/)) ? "あり" : "なし") + "</p>"
+                + "<p>最安値: " + (hotel.hotelMinCharge ? (hotel.hotelMinCharge + "円") : "情報なし") + "</p>"
                 //+ "<br>TEL: <a href='tel:" + (hotel.telephoneNo) + "'>" + hotel.telephoneNo + "</a>"
                 //+ "<br><br>キャンセルポリシー: " + (hotel.cancelPolicy)
-                + "<br><br>"
-                + (hotel.hotelThumbnailUrl ? "<img src='" + hotel.hotelThumbnailUrl + "'/>" : "")
-                + (hotel.roomThumbnailUrl ? "<img src='" + hotel.roomThumbnailUrl + "'/>" : "")
+                + "<br><details><summary>詳細情報</summary>"
+                + "<p>TEL: <a href='tel:" + (hotel.telephoneNo) + "'>" + hotel.telephoneNo + "</a></p>"
+                + "<p>キャンセルポリシー: " + (hotel.cancelPolicy) + "</p>"
+                + "<p>条件・注意事項: " + (hotel.note) + "</p>"
+                + "</details>"
+                + "<br>"
+                + "<p>" + (hotel.hotelThumbnailUrl ? "<img src='" + hotel.hotelThumbnailUrl + "'/>" : "")
+                + (hotel.roomThumbnailUrl ? "<img src='" + hotel.roomThumbnailUrl + "'/>" : "") + "</p>"
               );
             };
             
@@ -750,6 +755,15 @@ function LayeredCache(cache_name, parser, l1_cache_size = 1000, cache_expiration
   
   caches.open(cache_name).then((cs) => {
     l2_cache = cs;
+    prepared = true;
+  }).catch((e) => {
+    console.error("Cache API ERROR");
+    // ダミーのCacheオブジェクトを入れておく。
+    l2_cache = {
+      match: () => (void 0),
+      put: () => new Promise((resolve, reject) => resolve(void 0)),
+      delete: () => new Promise((resolve, reject) => resolve(true))
+    };
     prepared = true;
   });
   
