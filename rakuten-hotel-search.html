@@ -760,9 +760,9 @@ function LayeredCache(cache_name, parser, l1_cache_size = 1000, cache_expiration
     console.error("Cache API ERROR");
     // ダミーのCacheオブジェクトを入れておく。
     l2_cache = {
-      match: () => (void 0),
-      put: () => new Promise((resolve, reject) => resolve(void 0)),
-      delete: () => new Promise((resolve, reject) => resolve(true))
+      match: async function(){ return (void 0);},
+      put:  async function(){ return (void 0);},
+      delete:  async function(){ return true;}
     };
     prepared = true;
   });
