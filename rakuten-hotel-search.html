@@ -749,22 +749,24 @@ window.addEventListener("drop", function(e){
 function LayeredCache(cache_name, parser, l1_cache_size = 1000, cache_expiration = 30 * 86400 * 1000){
   const HEADER_EXPIRATION = "_expire_on";
   const l1_cache = new Map();
-  let l2_cache = null;
+  let l2_cache = {
+    match: async function(){ return (void 0);},
+    put:  async function(){ return (void 0);},
+    delete:  async function(){ return true;}
+  }; // ダミーのCacheオブジェクトを入れておく
   let prepared = false;
   
-  caches.open(cache_name).then((cs) => {
-    l2_cache = cs;
-    prepared = true;
-  }).catch((e) => {
-    console.error("Cache API ERROR");
-    // ダミーのCacheオブジェクトを入れておく。
-    l2_cache = {
-      match: async function(){ return (void 0);},
-      put:  async function(){ return (void 0);},
-      delete:  async function(){ return true;}
-    };
-    prepared = true;
-  });
+  if(window.caches){
+    caches.open(cache_name).then((cs) => {
+      l2_cache = cs;
+      prepared = true;
+    }).catch((e) => {
+      console.error("Cache API ERROR");
+      prepared = true;
+    });
+  }else{
+    console.error("Cache API Not Supported");
+  }
   
   /**
    * 指定したURLのデータをparser関数で処理した結果を返す。
