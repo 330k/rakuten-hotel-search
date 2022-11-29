@@ -279,8 +279,8 @@ function showGPXRoute(map, coords, color, filename){
 
     dist_info.innerHTML = filename + ": " + (0.001 * coords[index_min].dist).toFixed(1) + " km";
     dist_info.style.display = "block";
-    dist_info.style.left = evt.domEvent.pageX - dist_info.clientWidth * 0.5;
-    dist_info.style.top = evt.domEvent.pageY - dist_info.clientHeight - 20;
+    dist_info.style.left = (evt.domEvent.pageX - dist_info.clientWidth * 0.5) + "px";
+    dist_info.style.top = (evt.domEvent.pageY - dist_info.clientHeight - 20) + "px";
 
   });
   line_transparent.addListener("mouseout", function(evt){
