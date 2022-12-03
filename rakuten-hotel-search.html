@@ -562,7 +562,7 @@ function showHotelList(){
       title: toHalfWidth(hotel.hotelName),
       icon: {
         path: "M41.01.397c22.43 0 40.614 18.021 40.614 40.25 0 22.233-40.614 95.132-40.614 95.132S.397 62.879.397 40.648C.397 18.418 18.58.397 41.01.397z",
-        fillColor: '#' + color,
+        fillColor: "#" + color,
         fillOpacity: 1,
         labelOrigin: { x: 41.0105, y: 41.0105 },
         anchor: new google.maps.Point(41.0105, 136.594),
@@ -766,6 +766,7 @@ function LayeredCache(cache_name, parser, l1_cache_size = 1000, cache_expiration
     });
   }else{
     console.error("Cache API Not Supported");
+    prepared = true;
   }
   
   /**
@@ -917,17 +918,25 @@ function PromiseQueue(){
 }
 
 </script>
+<script async src="https://www.google-analytics.com/analytics.js"></script>
 <script type="application/javascript">
 var doNotTrack = false;
 if (!doNotTrack) {
   window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-  ga('create', 'UA-5655726-3', 'auto');
+  ga("create", "UA-5655726-3", "auto");
   
-  ga('send', 'pageview');
+  ga("send", "pageview");
 }
 </script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-L5FSJ397HF"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag("js", new Date());
+
+  gtag("config", "G-L5FSJ397HF");
+</script>
 <script defer src="https://maps.google.com/maps/api/js?key=AIzaSyA_aFkNjCuqBNETe8bxBk8_cnRQtQzdOG8&amp;callback=initMap"></script>
-<script async src='https://www.google-analytics.com/analytics.js'></script>
 <link rel="stylesheet" href="//code.jquery.com/ui/1.13.0/themes/base/jquery-ui.css">
 <style>
 * { margin: 0; padding: 0}
