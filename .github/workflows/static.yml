@@ -45,7 +45,7 @@ jobs:
         if: ${{ github.event_name != 'push' }}
         run: |
           date
-          node gather_hotel_data.js
+          node gather_hotel_info.js
           ls -al
       - name: Setup Pages
         uses: actions/configure-pages@v3
