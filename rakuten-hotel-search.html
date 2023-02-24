@@ -56,7 +56,8 @@ Promise.all([new Promise(function(resolve, reject){
   //fetch("hotel_info_summary.json").then(r=>r.json()).then((json) => {
   //lcache.fetch("https://script.google.com/macros/s/AKfycbwRwOIja_IyulhaCHB5S_AeGzeUSoLUkUtHBLho8LhsCN1tq7mrMqPjp17V8OkzZlAj/exec?method=JSON_SUMMARY").then((json) => {
   //fetch("https://storage.googleapis.com/330k-cannonball-weather/hotel_info_summary.json").then(r=>r.json()).then((json) => {
-  lcache.fetch("https://storage.googleapis.com/330k-cannonball-weather/hotel_info_summary.json").then((json) => {
+  //lcache.fetch("https://storage.googleapis.com/330k-cannonball-weather/hotel_info_summary.json").then((json) => {
+  lcache.fetch("hotel_info_summary.json").then((json) => {
     hotel_data.summary_info = json.filter(e => ((e.longitude > 0) && (e.latitude > 0)));
     console.log("hotel database loaded");
     
