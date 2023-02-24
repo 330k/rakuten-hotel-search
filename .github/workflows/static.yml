@@ -36,7 +36,12 @@ jobs:
       - name: Dump GitHub context
         id: github_context_step
         run: echo '${{ toJSON(github) }}'
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Download JSON (Skip Scraping)
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          wget https://330k.github.io/rakuten-hotel-search/hotel_info_summary.json -nv
+          ls -al
+      - name: Use Node.js
         if: ${{ github.event_name != 'push' }}
         uses: actions/setup-node@v3
         with:
