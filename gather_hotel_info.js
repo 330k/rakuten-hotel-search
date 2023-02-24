@@ -200,6 +200,6 @@ function summarizeHotelInfo(hotellargeinfo){
   const hotellargeinfo = await getHotelLargeInfo(hotelsmallinfo);
   const summary = summarizeHotelInfo(hotellargeinfo);
 
-  fs.writeFileSync("hotel_info_all.json", JSON.stringify(hotellargeinfo));
+  //fs.writeFileSync("hotel_info_all.json", JSON.stringify(hotellargeinfo));
   fs.writeFileSync("hotel_info_summary.json", JSON.stringify(summary));
 })();
