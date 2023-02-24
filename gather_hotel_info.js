@@ -1,4 +1,6 @@
 const fs = require("fs");
+const zlib = require('zlib');
+
 const APPID = "1008123474471814322";
 
 /**
@@ -202,4 +204,7 @@ function summarizeHotelInfo(hotellargeinfo){
 
   //fs.writeFileSync("hotel_info_all.json", JSON.stringify(hotellargeinfo));
   fs.writeFileSync("hotel_info_summary.json", JSON.stringify(summary));
+  zlib.gzip(JSON.stringify(hotellargeinfo), (err, binary) => {
+    fs.writeFileSync('hotel_info_all.json.gz', binary);
+  });
 })();
