@@ -186,7 +186,8 @@ function summarizeHotelInfo(hotellargeinfo){
       longitude: hotel.hotelBasicInfo.longitude,
       checkinTime: hotel.hotelDetailInfo.checkinTime,
       lastCheckinTime: hotel.hotelDetailInfo.lastCheckinTime,
-      laundry: hotel.hotelFacilitiesInfo.hotelFacilities.some((e) => e.item.match(/コインランドリー/))
+      laundry: hotel.hotelFacilitiesInfo.hotelFacilities.some((e) => e.item.match(/コインランドリー/)),
+      hotelMinCharge: hotel.hotelBasicInfo.hotelMinCharge
     });
   }
   
