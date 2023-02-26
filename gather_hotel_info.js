@@ -1,5 +1,6 @@
 const fs = require("fs");
 const zlib = require('zlib');
+const { setTimeout } = require('timers/promises');
 
 const APPID = "1008123474471814322";
 
@@ -103,12 +104,22 @@ async function getHotelSmallInfo(areacodes){
     const url = "https://app.rakuten.co.jp/services/api/Travel/SimpleHotelSearch/20170426?" + parameters.join("&");
     
     // 1ページ目を取得
-    console.log(url);
-    const response1 = await fetch_retry(url);
-    const json1 = await response1.json();
+    let response1;
+    let json1;
+    while(true){
+      try{
+        console.log(url);
+        response1 = await fetch_retry(url);
+        json1 = await response1.json();
 
-    //result.push(...json1.hotels);
-    result.push(...(json1.hotels.map((e) => flattenHotelInfo_(e))));
+        result.push(...(json1.hotels.map((e) => flattenHotelInfo_(e))));
+        break;
+      }catch(e){
+        console.log(e);
+        console.log(json1);
+        await setTimeout(3000);
+      }
+    }
     
     // 2ページ目以降を取得
     const records_total = json1.pagingInfo.recordCount;
@@ -118,12 +129,22 @@ async function getHotelSmallInfo(areacodes){
       for(let j = records_fetched + 1; j <= records_total; j += hits){
         const page = Math.ceil(j / hits);
         console.log(url + `&page=${page}`);
-        const response2 = await fetch_retry(url + `&page=${page}`);
-        const json2 = await response2.json();
+        let response2;
+        let json2;
+        while(true){
+          try{
+            response2 = await fetch_retry(url + `&page=${page}`);
+            json2 = await response2.json();
 
-        //result.push(...json2.hotels);
-        result.push(...(json2.hotels.map((e) => flattenHotelInfo_(e))));
-        records_fetched = json2.pagingInfo.last;
+            result.push(...(json2.hotels.map((e) => flattenHotelInfo_(e))));
+            records_fetched = json2.pagingInfo.last;
+            break;
+          }catch(e){
+            console.log(e);
+            console.log(json2);
+            await setTimeout(3000);
+          }
+        }
       }
     }
   }
