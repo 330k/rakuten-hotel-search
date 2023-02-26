@@ -39,7 +39,7 @@ jobs:
       - name: Download Existing JSON
         if: ${{ github.event_name == 'push' }}
         run: |
-          #wget https://330k.github.io/rakuten-hotel-search/hotel_info_all.json.gz -nv
+          wget https://330k.github.io/rakuten-hotel-search/hotel_info_all.json.gz -nv || echo 'Skip hotel_info_all.json.gz'
           wget https://330k.github.io/rakuten-hotel-search/hotel_info_summary.json -nv
       - name: Use Node.js
         if: ${{ github.event_name != 'push' }}
@@ -50,9 +50,11 @@ jobs:
         if: ${{ github.event_name != 'push' }}
         run: |
           date
-          #wget https://330k.github.io/rakuten-hotel-search/hotel_info_all.json.gz -nv
-          wget https://330k.github.io/rakuten-hotel-search/hotel_info_summary.json -nv
           node gather_hotel_info.js
+          if [ ! -s hotel_info_all.json ]; then
+            wget https://330k.github.io/rakuten-hotel-search/hotel_info_all.json.gz -nv || echo 'Skip hotel_info_all.json.gz'
+            wget https://330k.github.io/rakuten-hotel-search/hotel_info_summary.json -nv
+          fi
           ls -al
       - name: Setup Pages
         uses: actions/configure-pages@v3
