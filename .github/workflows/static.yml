@@ -49,6 +49,7 @@ jobs:
         if: ${{ github.event_name != 'push' }}
         run: |
           date
+          wget https://330k.github.io/rakuten-hotel-search/hotel_info_summary.json -nv
           node gather_hotel_info.js
           ls -al
       - name: Setup Pages
