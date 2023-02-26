@@ -36,21 +36,21 @@ jobs:
       - name: Dump GitHub context
         id: github_context_step
         run: echo '${{ toJSON(github) }}'
-      - name: Download JSON (Skip Scraping)
+      - name: Download Existing JSON
         if: ${{ github.event_name == 'push' }}
         run: |
-          wget https://330k.github.io/rakuten-hotel-search/hotel_info_all.json.gz -nv
+          #wget https://330k.github.io/rakuten-hotel-search/hotel_info_all.json.gz -nv
           wget https://330k.github.io/rakuten-hotel-search/hotel_info_summary.json -nv
       - name: Use Node.js
         if: ${{ github.event_name != 'push' }}
         uses: actions/setup-node@v3
         with:
-          node-version: 19
+          node-version: 18
       - name: Gather Hotel Data
         if: ${{ github.event_name != 'push' }}
         run: |
           date
-          wget https://330k.github.io/rakuten-hotel-search/hotel_info_all.json.gz -nv
+          #wget https://330k.github.io/rakuten-hotel-search/hotel_info_all.json.gz -nv
           wget https://330k.github.io/rakuten-hotel-search/hotel_info_summary.json -nv
           node gather_hotel_info.js
           ls -al
