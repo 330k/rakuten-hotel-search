@@ -39,6 +39,7 @@ jobs:
       - name: Download JSON (Skip Scraping)
         if: ${{ github.event_name == 'push' }}
         run: |
+          wget https://330k.github.io/rakuten-hotel-search/hotel_info_all.json.gz -nv
           wget https://330k.github.io/rakuten-hotel-search/hotel_info_summary.json -nv
       - name: Use Node.js
         if: ${{ github.event_name != 'push' }}
@@ -49,6 +50,7 @@ jobs:
         if: ${{ github.event_name != 'push' }}
         run: |
           date
+          wget https://330k.github.io/rakuten-hotel-search/hotel_info_all.json.gz -nv
           wget https://330k.github.io/rakuten-hotel-search/hotel_info_summary.json -nv
           node gather_hotel_info.js
           ls -al
