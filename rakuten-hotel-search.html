@@ -53,11 +53,11 @@ Promise.all([new Promise(function(resolve, reject){
   console.log("Loading hotel database");
 
   //fetch("https://script.google.com/macros/s/AKfycbwRwOIja_IyulhaCHB5S_AeGzeUSoLUkUtHBLho8LhsCN1tq7mrMqPjp17V8OkzZlAj/exec?method=JSON_SUMMARY").then(r=>r.json()).then((json) => {
-  //fetch("hotel_info_summary.json").then(r=>r.json()).then((json) => {
   //lcache.fetch("https://script.google.com/macros/s/AKfycbwRwOIja_IyulhaCHB5S_AeGzeUSoLUkUtHBLho8LhsCN1tq7mrMqPjp17V8OkzZlAj/exec?method=JSON_SUMMARY").then((json) => {
   //fetch("https://storage.googleapis.com/330k-cannonball-weather/hotel_info_summary.json").then(r=>r.json()).then((json) => {
   //lcache.fetch("https://storage.googleapis.com/330k-cannonball-weather/hotel_info_summary.json").then((json) => {
-  lcache.fetch("hotel_info_summary.json").then((json) => {
+  fetch("hotel_info_summary.json").then(r=>r.json()).then((json) => {
+  //lcache.fetch("hotel_info_summary.json").then((json) => {
     hotel_data.summary_info = json.filter(e => ((e.longitude > 0) && (e.latitude > 0)));
     console.log("hotel database loaded");
     
@@ -492,6 +492,11 @@ function checkHotelVisibility(hotel){
   // 洗濯機有無の判定
   if(document.getElementById("laundry_exists").checked){
     flag = flag && hasCoinLaundry(hotel);
+  }
+  
+  // 価格情報の有無の判定
+  if(document.getElementById("price_info_exists").checked){
+    flag = flag && (hotel.hotelMinCharge > 0);
   }
   
   return flag;
@@ -1172,7 +1177,7 @@ html, body {
   </select></div>
   <div><label><input type="checkbox" id="show_hotels_without_last_checkin" checked>最終チェックイン時刻の情報がない宿も表示</label></div>
   <div><label><input type="checkbox" id="laundry_exists">洗濯機が有る宿のみ表示</label></div>
-  <!--<div><label title="価格情報がない宿は営業していない可能性があります"><input type="checkbox" id="price_info_exists">最低価格情報が有る宿のみ表示</label></div>-->
+  <div><label title="最低価格情報がない宿は営業していない可能性があります"><input type="checkbox" id="price_info_exists">最低価格情報が有る宿のみ表示</label></div>
 </fieldset>
 <fieldset>
  <legend>その他機能</legend>
@@ -1180,7 +1185,7 @@ html, body {
   <button onclick="document.getElementById('gpx_file').click();">GPXファイル読み込み</button><input type="file" id="gpx_file" accept=".gpx" />
   <button id="button_clear_result" onclick="clearResult();">検索結果のクリア</button>
  </div>
- <div><label><input type="checkbox" id="show_all_hotels">検索条件を満たすすべてのホテルの位置を表示</label></div>
+ <div><label title="動作が重くなる可能性がありますのでご注意ください"><input type="checkbox" id="show_all_hotels">検索条件を満たすすべてのホテルの位置を表示</label></div>
 </fieldset>
 </div>
 <div id="result_panel">
