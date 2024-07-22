@@ -3,19 +3,20 @@ const zlib = require('zlib');
 const { setTimeout } = require('timers/promises');
 
 const APPID = "1008123474471814322";
-const WAIT_1 = 500;
+const WAIT_1 = 200;
 const WAIT_2 = 3000;
 
 /**
  * 失敗時にリトライするfetch
  */
-async function fetch_retry(url, options = undefined, n = 10){
+async function fetch_retry(url, options = undefined, n = 10, wait = 1000){
   try {
     return await fetch(url, options);
   } catch (err) {
     console.error("FETCH RETRY");
+    await setTimeout(wait);
     if (n === 1) throw err;
-    return await fetch_retry(url, options, n - 1);
+    return await fetch_retry(url, options, n - 1, wait);
   }
 }
 
@@ -178,11 +179,20 @@ async function getHotelLargeInfo(hotelsmallinfo){
       "hotelNo=" + hotelNos.join(",")
     ];
     const url = "https://app.rakuten.co.jp/services/api/Travel/SimpleHotelSearch/20170426?" + parameters.join("&");
-    const response = await fetch_retry(url);
-    const json = await response.json();
 
-    for(let j = 0; j < json.hotels.length; j++){
-      result.push(flattenHotelInfo_(json.hotels[j]));
+    for(let k = 0; k < 5; k++){
+      try{
+        const response = await fetch_retry(url);
+        const json = await response.json();
+    
+        for(let j = 0; j < json.hotels.length; j++){
+          result.push(flattenHotelInfo_(json.hotels[j]));
+        }
+        break;
+      }catch(e){
+        console.log(url);
+        console.log(e);
+      }
     }
     await setTimeout(WAIT_1);
   }
