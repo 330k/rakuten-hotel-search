@@ -3,6 +3,8 @@ const zlib = require('zlib');
 const { setTimeout } = require('timers/promises');
 
 const APPID = "1008123474471814322";
+const WAIT_1 = 500;
+const WAIT_2 = 3000;
 
 /**
  * 失敗時にリトライするfetch
@@ -113,11 +115,12 @@ async function getHotelSmallInfo(areacodes){
         json1 = await response1.json();
 
         result.push(...(json1.hotels.map((e) => flattenHotelInfo_(e))));
+        await setTimeout(WAIT_1);
         break;
       }catch(e){
         console.log(e);
         console.log(json1);
-        await setTimeout(3000);
+        await setTimeout(WAIT_2);
       }
     }
     
@@ -138,11 +141,12 @@ async function getHotelSmallInfo(areacodes){
 
             result.push(...(json2.hotels.map((e) => flattenHotelInfo_(e))));
             records_fetched = json2.pagingInfo.last;
+            await setTimeout(WAIT_1);
             break;
           }catch(e){
             console.log(e);
             console.log(json2);
-            await setTimeout(3000);
+            await setTimeout(WAIT_2);
           }
         }
       }
@@ -180,6 +184,7 @@ async function getHotelLargeInfo(hotelsmallinfo){
     for(let j = 0; j < json.hotels.length; j++){
       result.push(flattenHotelInfo_(json.hotels[j]));
     }
+    await setTimeout(WAIT_1);
   }
 
   return result;
