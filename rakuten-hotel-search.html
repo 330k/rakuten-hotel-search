@@ -522,6 +522,16 @@ function hotelMarkerColor(hotel){
 }
 
 /**
+ * リンク先を開く(iPhoneのPWA対策)
+ * @param href {string}
+ */
+function openLink(href){
+  console.log("Open Link with Javascript");
+  window.open(href);
+  return false;
+}
+
+/**
  * 検索結果を表示
  */
 function showHotelList(){
@@ -558,7 +568,8 @@ function showHotelList(){
     ele_row.classList.add("hotel_row");
     const href = "http://hb.afl.rakuten.co.jp/hgc/219cb501.2d23fbc2.219cb502.49f3944c/?pc=" + encodeURIComponent("https://img.travel.rakuten.co.jp/image/tr/api/hs/dQ4dX/?f_no=" + hotel_no);
     ele_row.innerHTML = "<div class='hotel_number'>" + (i + 1) + "</div>"
-      + "<div class='hotel_name'>" + "<a href='" + href + "' target='_blank'>" + toHalfWidth(hotel.hotelName) + "</a></div>"
+      //+ "<div class='hotel_name'>" + "<a href='" + href + "' target='_blank' onclick='window.open(\"' + href + '\");return false;'>" + toHalfWidth(hotel.hotelName) + "</a></div>"
+      + "<div class='hotel_name'>" + "<a href='" + href + "' target='_blank' onclick='openLink(\"" + href + "\");return false;'>" + toHalfWidth(hotel.hotelName) + "</a></div>"
       + "<div class='hotel_checkin'>" + hotel.checkinTime + "-" + (hotel.lastCheckinTime ? hotel.lastCheckinTime : "") + "</div>"
       + "<div class='hotel_laundry'>" + (hasCoinLaundry(hotel) ? "✓" : "") + "</div>"
     
@@ -601,8 +612,8 @@ function showHotelList(){
             let hotel = hotel_data.detail_info.get(hotel_no);
             const setHotelInfo = function(infowindow, hotel){
               infowindow.setContent(
-                "<p><a href='" + hotel.hotelInformationUrl + "' target='_blank'>" + toHalfWidth(hotel.hotelName) + "</a>"
-                + " - <a href='" + hotel.planListUrl + "' target='_blank'>プラン一覧</a></p>"
+                "<p><a href='" + hotel.hotelInformationUrl + "' target='_blank' onclick='openLink(\"" + hotel.hotelInformationUrl + "\");return false;'>" + toHalfWidth(hotel.hotelName) + "</a>"
+                + " - <a href='" + hotel.planListUrl + "' target='_blank' onclick='openLink(\"" + hotel.planListUrl + "\");return false;'>プラン一覧</a></p>"
                 + "<p>★: " + (hotel.reviewAverage ? hotel.reviewAverage : "データなし") + "</p>"
                 + "<br><p>チェックイン時間: " + hotel.checkinTime + "-" + (hotel.lastCheckinTime ? hotel.lastCheckinTime : "") + "</p>"
                 + "<p>洗濯機: " + (hotel.hotelFacilities.some(e=>e.item.match(/コインランドリー/)) ? "あり" : "なし") + "</p>"
