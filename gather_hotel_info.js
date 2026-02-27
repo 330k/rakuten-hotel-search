@@ -4,7 +4,7 @@ const { setTimeout } = require('timers/promises');
 
 const APPID = "5af3c35d-55ba-47e2-8f48-8290c2e74f58";
 const ACCESSKEY = "pk_dWf2wV8xvyQx0a7txVHlgQfO9Mq8skMQ4amQk1fZGTD";
-const WAIT_1 = 200;
+const WAIT_1 = 1000;
 const WAIT_2 = 3000;
 
 /**
