@@ -2,7 +2,8 @@ const fs = require("fs");
 const zlib = require('zlib');
 const { setTimeout } = require('timers/promises');
 
-const APPID = "1008123474471814322";
+const APPID = "5af3c35d-55ba-47e2-8f48-8290c2e74f58";
+const ACCESSKEY = "pk_dWf2wV8xvyQx0a7txVHlgQfO9Mq8skMQ4amQk1fZGTD";
 const WAIT_1 = 200;
 const WAIT_2 = 3000;
 
@@ -24,7 +25,7 @@ async function fetch_retry(url, options = undefined, n = 10, wait = 1000){
  * 地域コードの一覧を取得する
  */
 async function getAreaCodes() {
-  const response = await fetch_retry(`https://app.rakuten.co.jp/services/api/Travel/GetAreaClass/20131024?format=json&formatVersion=2&applicationId=${APPID}`);
+  const response = await fetch_retry(`https://openapi.rakuten.co.jp/engine/api/Travel/GetAreaClass/20131024?format=json&formatVersion=2&applicationId=${APPID}&accessKey=${ACCESSKEY}`, { headers: {'Origin': 'https://www.330k.info/'}});
   const json = await response.json();
 
   const areacodes = [];
@@ -96,6 +97,7 @@ async function getHotelSmallInfo(areacodes){
       "responseType=small",
       "datumType=1",
       `applicationId=${APPID}`,
+      `accessKey=${ACCESSKEY}`,
       `hits=${hits}`,
       `largeClassCode=${large}`,
       `middleClassCode=${middle}`,
@@ -104,7 +106,7 @@ async function getHotelSmallInfo(areacodes){
     if(detail){
       parameters.push(`detailClassCode=${detail}`);
     }
-    const url = "https://app.rakuten.co.jp/services/api/Travel/SimpleHotelSearch/20170426?" + parameters.join("&");
+    const url = "https://openapi.rakuten.co.jp/engine/api/Travel/SimpleHotelSearch/20170426?" + parameters.join("&");
     
     // 1ページ目を取得
     let response1;
@@ -112,7 +114,7 @@ async function getHotelSmallInfo(areacodes){
     while(true){
       try{
         console.log(url);
-        response1 = await fetch_retry(url);
+        response1 = await fetch_retry(url, { headers: {'Origin': 'https://www.330k.info/'}});
         json1 = await response1.json();
 
         result.push(...(json1.hotels.map((e) => flattenHotelInfo_(e))));
@@ -137,7 +139,7 @@ async function getHotelSmallInfo(areacodes){
         let json2;
         while(true){
           try{
-            response2 = await fetch_retry(url + `&page=${page}`);
+            response2 = await fetch_retry(url + `&page=${page}`, { headers: {'Origin': 'https://www.330k.info/'}});
             json2 = await response2.json();
 
             result.push(...(json2.hotels.map((e) => flattenHotelInfo_(e))));
@@ -176,13 +178,14 @@ async function getHotelLargeInfo(hotelsmallinfo){
       "responseType=large",
       "datumType=1",
       `applicationId=${APPID}`,
+      `accessKey=${ACCESSKEY}`,
       "hotelNo=" + hotelNos.join(",")
     ];
-    const url = "https://app.rakuten.co.jp/services/api/Travel/SimpleHotelSearch/20170426?" + parameters.join("&");
+    const url = "https://openapi.rakuten.co.jp/engine/api/Travel/SimpleHotelSearch/20170426?" + parameters.join("&");
 
     for(let k = 0; k < 5; k++){
       try{
-        const response = await fetch_retry(url);
+        const response = await fetch_retry(url, { headers: {'Origin': 'https://www.330k.info/'}});
         const json = await response.json();
     
         for(let j = 0; j < json.hotels.length; j++){

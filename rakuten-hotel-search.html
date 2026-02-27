@@ -612,8 +612,8 @@ function showHotelList(){
             let hotel = hotel_data.detail_info.get(hotel_no);
             const setHotelInfo = function(infowindow, hotel){
               infowindow.setContent(
-                "<p><a href='" + hotel.hotelInformationUrl + "' target='_blank'>" + toHalfWidth(hotel.hotelName) + "</a>"
-                + " - <a href='" + hotel.planListUrl + "' target='_blank'>プラン一覧</a></p>"
+                "<p><a href='" + hotel.hotelInformationUrl + "' target='_blank' rel='noopener noreferrer'>" + toHalfWidth(hotel.hotelName) + "</a>"
+                + " - <a href='" + hotel.planListUrl + "' target='_blank' rel='noopener noreferrer'>プラン一覧</a></p>"
                 /*"<p><a href='" + hotel.hotelInformationUrl + "' target='_blank' onclick='openLink(\"" + hotel.hotelInformationUrl + "\");return false;'>" + toHalfWidth(hotel.hotelName) + "</a>"
                 + " - <a href='" + hotel.planListUrl + "' target='_blank' onclick='openLink(\"" + hotel.planListUrl + "\");return false;'>プラン一覧</a></p>"*/
                 + "<p>★: " + (hotel.reviewAverage ? hotel.reviewAverage : "データなし") + "</p>"
@@ -635,9 +635,10 @@ function showHotelList(){
             
             if(hotel === undefined){
               hotel = {};
-              const appid = "1008123474471814322";
-              const affid = "219cb501.2d23fbc2.219cb502.49f3944c";
-              const url = `https://app.rakuten.co.jp/services/api/Travel/SimpleHotelSearch/20170426?applicationId=${appid}&affiliateId=${affid}&format=json&formatVersion=2&datumType=1&responseType=large&hotelNo=${hotel_no}`;
+              const APPID = "5af3c35d-55ba-47e2-8f48-8290c2e74f58";
+              const ACCESSKEY = "pk_dWf2wV8xvyQx0a7txVHlgQfO9Mq8skMQ4amQk1fZGTD";
+              const AFFID = "219cb501.2d23fbc2.219cb502.49f3944c";
+              const url = `https://openapi.rakuten.co.jp/engine/api/Travel/SimpleHotelSearch/20170426?applicationId=${APPID}&accessKey=${ACCESSKEY}&affiliateId=${AFFID}&format=json&formatVersion=2&datumType=1&responseType=large&hotelNo=${hotel_no}`;
               
               lcache.fetch(url).then((json) => {
                 for(let i in json.hotels){
