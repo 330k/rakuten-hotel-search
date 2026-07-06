@@ -41,7 +41,7 @@ jobs:
         if: ${{ github.event_name != 'push' }}
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
       - name: Gather Hotel Data
         if: ${{ github.event_name != 'push' }}
         run: |
