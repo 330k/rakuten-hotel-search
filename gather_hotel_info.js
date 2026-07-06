@@ -25,37 +25,28 @@ async function fetch_retry(url, options = undefined, n = 10, wait = 1000){
  * 地域コードの一覧を取得する
  */
 async function getAreaCodes() {
-  const response = await fetch_retry(`https://openapi.rakuten.co.jp/engine/api/Travel/GetAreaClass/20131024?format=json&formatVersion=2&applicationId=${APPID}&accessKey=${ACCESSKEY}`, { headers: {'Origin': 'https://www.330k.info/'}});
+  const response = await fetch_retry(`https://openapi.rakuten.co.jp/engine/api/Travel/GetAreaClass/20140210?format=json&formatVersion=2&applicationId=${APPID}&accessKey=${ACCESSKEY}`, { headers: {'Origin': 'https://www.330k.info/'}});
   const json = await response.json();
-
   const areacodes = [];
 
   for(const large of json.areaClasses.largeClasses){
-    const largeClassCode = large[0].largeClassCode;
+    const largeClassCode = large.largeClassCode;
 
-    if(large[1]){
-      for(const middle of large[1].middleClasses){
-        const middleClassCode = middle.middleClass[0].middleClassCode;
+    for(const middle of large.middleClasses){
+      const middleClassCode = middle.middleClassCode;
 
-        if(middle.middleClass[1]){
-          for(const small of middle.middleClass[1].smallClasses){
-            const smallClassCode = small.smallClass[0].smallClassCode;
+      for(const small of middle.smallClasses){
+        const smallClassCode = small.smallClassCode;
 
-            if(small.smallClass[1]){
-              for(const detail of small.smallClass[1].detailClasses){
-                const detailClassCode = detail.detailClass.detailClassCode;
-                areacodes.push({ largeClassCode, middleClassCode, smallClassCode, detailClassCode });
-              }
-            }else{
-              areacodes.push({ largeClassCode, middleClassCode, smallClassCode, detailClassCode: null });
-            }
+        if(small.detailClasses){
+          for(const detail of small.detailClasses){
+            const detailClassCode = detail.detailClassCode;
+            areacodes.push({ largeClassCode, middleClassCode, smallClassCode, detailClassCode });
           }
         }else{
-          areacodes.push({ largeClassCode, middleClassCode, smallClassCode: null, detailClassCode: null});
+          areacodes.push({ largeClassCode, middleClassCode, smallClassCode, detailClassCode: null });
         }
       }
-    }else{
-      areacodes.push({largeClassCode, middleClassCode: null, smallClassCode: null, detailClassCode: null});
     }
   }
 
