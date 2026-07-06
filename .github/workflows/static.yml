@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Download Existing JSON
         run: |
           wget https://330k.github.io/rakuten-hotel-search/hotel_info_all.json.gz -nv || echo 'Skip hotel_info_all.json.gz'
