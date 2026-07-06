@@ -39,7 +39,7 @@ jobs:
           wget https://330k.github.io/rakuten-hotel-search/hotel_info_summary.json -nv
       - name: Use Node.js
         if: ${{ github.event_name != 'push' }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24
       - name: Gather Hotel Data
